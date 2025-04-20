@@ -1,11 +1,10 @@
 ---
 source: tests/new.rs
 expression: output
-
 ---
+warning: "AtCoder Beginner Contest 003" seems to be an ABC. Skipping extracting the time limit and the relative{{ slash_or_backslash }}absolute error, because they are not "specific integers or strings"
      Created `abc003` package at {{ cwd }}{{ slash_or_backslash }}.{{ slash_or_backslash }}abc003
        Saved 2 test cases to {{ cwd }}{{ slash_or_backslash }}.{{ slash_or_backslash }}abc003{{ slash_or_backslash }}testcases{{ slash_or_backslash }}{a.yml, a{{ slash_or_backslash }}}
        Saved 3 test cases to {{ cwd }}{{ slash_or_backslash }}.{{ slash_or_backslash }}abc003{{ slash_or_backslash }}testcases{{ slash_or_backslash }}{b.yml, b{{ slash_or_backslash }}}
        Saved 3 test cases to {{ cwd }}{{ slash_or_backslash }}.{{ slash_or_backslash }}abc003{{ slash_or_backslash }}testcases{{ slash_or_backslash }}{c.yml, c{{ slash_or_backslash }}}
        Saved 4 test cases to {{ cwd }}{{ slash_or_backslash }}.{{ slash_or_backslash }}abc003{{ slash_or_backslash }}testcases{{ slash_or_backslash }}{d.yml, d{{ slash_or_backslash }}}
-
