@@ -23,6 +23,7 @@ use crate::{
     },
     shell::Shell,
 };
+use commands::clip::OptCompeteClip;
 use std::path::PathBuf;
 use structopt::{clap::AppSettings, StructOpt};
 
@@ -86,6 +87,10 @@ pub enum OptCompete {
     /// Submit your code
     #[structopt(author, visible_alias("s"))]
     Submit(OptCompeteSubmit),
+
+    /// Copy your code to clipboard
+    #[structopt(author, visible_alias("c"))]
+    Clip(OptCompeteClip),
 }
 
 #[derive(StructOpt, Debug)]
@@ -141,5 +146,6 @@ pub fn run(opt: OptCompete, ctx: Context<'_>) -> anyhow::Result<()> {
         OptCompete::Open(opt) => commands::open::run(opt, ctx),
         OptCompete::Test(opt) => commands::test::run(opt, ctx),
         OptCompete::Submit(opt) => commands::submit::run(opt, ctx),
+        OptCompete::Clip(opt) => commands::clip::run(opt, ctx),
     }
 }
