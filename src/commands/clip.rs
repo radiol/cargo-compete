@@ -15,10 +15,17 @@ use strum::VariantNames as _;
     about = "Test (unless --no-test) and copy the source code to clipboard"
 )]
 pub struct OptCompeteClip {
+    /// Do not test before copying to clipboard
     #[structopt(long)]
     pub no_test: bool,
 
-    #[structopt(long)]
+    /// Path to the source code
+    #[structopt(
+        long,
+        value_name("PATH"),
+        required_unless("name-or-alias"),
+        conflicts_with("name-or-alias")
+    )]
     pub src: Option<PathBuf>,
 
     /// Test for only the test cases
@@ -29,18 +36,23 @@ pub struct OptCompeteClip {
     #[structopt(long, value_name("SIZE"), default_value("4KiB"))]
     pub display_limit: Size,
 
-    #[structopt(short, long)]
+    /// Existing package to retrieving test cases for
+    #[structopt(short, long, value_name("SPEC"))]
     pub package: Option<String>,
 
-    #[structopt(long)]
-    pub manifest_path: Option<PathBuf>,
-
-    #[structopt(long)]
+    /// When testing, build in debug mode. Overrides `test.profile` in compete.toml
+    #[structopt(long, conflicts_with("release"))]
     pub debug: bool,
 
+    /// When testing, build in release mode. Overrides `test.profile` in compete.toml
     #[structopt(long)]
     pub release: bool,
 
+    /// Path to Cargo.toml
+    #[structopt(long)]
+    pub manifest_path: Option<PathBuf>,
+
+    /// Coloring
     #[structopt(
         long,
         value_name("WHEN"),
@@ -50,6 +62,7 @@ pub struct OptCompeteClip {
     pub color: ColorChoice,
 
     #[structopt(required_unless("src"))]
+    /// Name or alias for a `bin`/`example`
     pub name_or_alias: Option<String>,
 }
 
@@ -60,9 +73,9 @@ pub fn run(opt: OptCompeteClip, ctx: crate::Context<'_>) -> Result<()> {
         testcases,
         display_limit,
         package,
-        manifest_path,
         debug,
         release,
+        manifest_path,
         color,
         name_or_alias,
     } = opt;
@@ -70,16 +83,12 @@ pub fn run(opt: OptCompeteClip, ctx: crate::Context<'_>) -> Result<()> {
     let crate::Context { cwd, shell, .. } = ctx;
     shell.set_color_choice(color);
 
-    // Step 1: project metadata
-
     let manifest_path = manifest_path
         .map(|p| Ok(cwd.join(p.strip_prefix(".").unwrap_or(&p))))
         .unwrap_or_else(|| crate::project::locate_project(&cwd))?;
-
     let metadata = crate::project::cargo_metadata(&manifest_path, &cwd)?;
     let member = metadata.query_for_member(package.as_deref())?;
 
-    // Step 2: bin target
     let bin = if let Some(src) = src {
         let src_path = cwd.join(src.strip_prefix(".").unwrap_or(&src));
         member.bin_target_by_src_path(src_path)?
@@ -91,7 +100,6 @@ pub fn run(opt: OptCompeteClip, ctx: crate::Context<'_>) -> Result<()> {
         bail!("Either --src or <bin-name> must be provided");
     };
 
-    // Step 3: test (if enabled)
     if !no_test {
         crate::process::process(env::current_exe()?)
             .args(&["compete", "t", "--src"])
@@ -115,15 +123,14 @@ pub fn run(opt: OptCompeteClip, ctx: crate::Context<'_>) -> Result<()> {
             .exec_with_shell_status(shell)?;
     }
 
-    // Step 4: read file
     let code = fs::read_to_string(&bin.src_path)
         .with_context(|| format!("Failed to read {}", bin.src_path))?;
 
-    // Step 5: copy to clipboard
-    let mut ctx: ClipboardContext = ClipboardProvider::new()
+    let mut clipboard_context: ClipboardContext = ClipboardProvider::new()
         .map_err(|e| anyhow::anyhow!("Failed to initialize clipboard provider: {}", e))?;
 
-    ctx.set_contents(code)
+    clipboard_context
+        .set_contents(code)
         .map_err(|e| anyhow::anyhow!("Failed to copy to clipboard: {}", e))?;
 
     shell.status("Success", "Copied source code to clipboard")?;
